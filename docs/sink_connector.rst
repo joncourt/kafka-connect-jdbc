@@ -7,8 +7,8 @@ The connector polls data from Kafka to write to the database based on the topics
 It is possible to achieve idempotent writes with upserts.
 Auto-creation of tables, and limited auto-evolution is also supported.
 
-Quickstart
-----------
+Quick Start
+-----------
 
 To see the basic functionality of the connector, we'll be copying Avro data from a single topic to a local SQLite database.
 This example assumes you are running Kafka and Schema Registry locally on the default ports.

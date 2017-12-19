@@ -11,12 +11,16 @@ The database is monitored for new or deleted tables and adapts automatically. Wh
 from a table, the connector can load only new or modified rows by specifying which columns should
 be used to detect new or modified data.
 
-Quickstart
-----------
+Quick Start
+-----------
 
 To see the basic functionality of the connector, we'll copy a single table from a local SQLite
 database. In this simple example, we'll assume each entry in the table is assigned a unique ID
 and is not modified after creation.
+
+.. include:: includes/prerequisites.rst
+    :start-line: 2
+    :end-line: 6
 
 .. note:: You can use your favorite database instead of SQLite.
    Follow the same steps, but adjust the ``connection.url`` setting for your database.
