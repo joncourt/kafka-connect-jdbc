@@ -14,93 +14,109 @@ be used to detect new or modified data.
 Quick Start
 -----------
 
-To see the basic functionality of the connector, we'll copy a single table from a local SQLite
-database. In this simple example, we'll assume each entry in the table is assigned a unique ID
+To see the basic functionality of the connector, you'll copy a single table from a local SQLite
+database. In this simple example, you'll assume each entry in the table is assigned a unique ID
 and is not modified after creation.
 
 .. include:: includes/prerequisites.rst
     :start-line: 2
     :end-line: 6
+- `SQLite <https://sqlite.org/download.html>`_
 
-.. note:: You can use your favorite database instead of SQLite.
-   Follow the same steps, but adjust the ``connection.url`` setting for your database.
-   Confluent Platform includes JDBC drivers for SQLite and PostgreSQL, but if
-   you're using a different database you'll also need to make sure the JDBC driver is available on
-   the Kafka Connect process's ``CLASSPATH``.
+#.  Create a SQLite database with this command:
 
-Start by creating a database (you'll need to install SQLite if you haven't already)::
+    .. sourcecode:: bash
 
-   $ sqlite3 test.db
-   SQLite version 3.8.10.2 2015-05-20 18:17:19
-   Enter ".help" for usage hints.
-   sqlite>
+       $ sqlite3 test.db
 
-Next in the SQLite command prompt, create a table and seed it with some data::
+    Your output should resemble:
 
-   sqlite> CREATE TABLE accounts(id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, name VARCHAR(255));
-   sqlite> INSERT INTO accounts(name) VALUES('alice');
-   sqlite> INSERT INTO accounts(name) VALUES('bob');
+    .. sourcecode:: bash
 
-Now we create a configuration file that will load data from this database. This file is included
-with the connector in ``./etc/kafka-connect-jdbc/source-quickstart-sqlite.properties`` and contains the
-following settings::
+       SQLite version 3.19.3 2017-06-27 16:48:08
+       Enter ".help" for usage hints.
+       sqlite>
 
-   name=test-sqlite-jdbc-autoincrement
-   connector.class=io.confluent.connect.jdbc.JdbcSourceConnector
-   tasks.max=1
-   connection.url=jdbc:sqlite:test.db
-   mode=incrementing
-   incrementing.column.name=id
-   topic.prefix=test-sqlite-jdbc-
+    .. note::
 
-The first few settings are common settings you'll specify for all connectors. The ``connection.url``
-specifies the database to connect to, in this case a local SQLite database file. The ``mode``
-indicates how we want to query the data. In this case, we have an auto-incrementing unique
-ID, so we select ``incrementing`` mode and set ``incrementing.column.name``. In this mode,
-each query for new data will only return rows with IDs larger than the maximum ID seen in
-previous queries. Finally, we can control the names of the topics
-that each table's output is sent to with the ``topic.prefix`` setting. Since we only have one
-table, the only output topic in this example will be ``test-sqlite-jdbc-accounts``.
+        You can use another database instead of SQLite. To do so, follow the same steps, but adjust the ``connection.url`` setting for your database. |CP| includes JDBC drivers for SQLite and PostgreSQL, but if you're using a different database you'll also need to make sure the JDBC driver is available on the Kafka Connect process's ``CLASSPATH``.
 
-Now, run the connector in a standalone Kafka Connect worker in another terminal (this assumes
-Avro settings and that Kafka and the Schema Registry are running locally on the default ports)::
+#.  In the SQLite command prompt, create a table and seed it with some data:
 
-   $ ./bin/connect-standalone ./etc/schema-registry/connect-avro-standalone.properties ./etc/kafka-connect-jdbc/source-quickstart-sqlite.properties
+    .. sourcecode:: bash
 
-You should see the process start up and log some messages, and then it will begin executing
-queries and sending the results to Kafka. In order to check that it has copied the data that was
-present when we started Kafka Connect, start a console consumer, reading from the beginning of
-the topic::
+       sqlite> CREATE TABLE accounts(id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, name VARCHAR(255));
 
-   $ ./bin/kafka-avro-console-consumer --new-consumer --bootstrap-server localhost:9092 --topic test-sqlite-jdbc-accounts --from-beginning
-   {"id":1,"name":{"string":"alice"}}
-   {"id":2,"name":{"string":"bob"}}
+    .. sourcecode:: bash
 
-The output shows the two records as expected, one per line, in the JSON encoding of the Avro
-records. Each row is represented as an Avro record and each column is a field in the record. We
-can see both columns in the table, ``id`` and ``name``. The IDs were auto-generated and the column
-is of type ``INTEGER NOT NULL``, which can be encoded directly as an integer. The ``name`` column
-has type ``STRING`` and can be ``NULL``. The JSON encoding of Avro encodes the strings in the
-format ``{"type": value}``, so we can see that both rows have ``string`` values with the names
-specified when we inserted the data.
+       sqlite> INSERT INTO accounts(name) VALUES('alice');
 
-Now, keeping the consumer process running, add another record via the SQLite command prompt::
+    .. sourcecode:: bash
 
-   sqlite> INSERT INTO accounts(name) VALUES('cathy');
+       sqlite> INSERT INTO accounts(name) VALUES('bob');
 
-If you switch back to the console consumer, you should see the new record added (and,
-importantly, the old entries are not repeated)::
+    .. tip:: You can run ``SELECT * from accounts;`` to verify your table has been created.
 
-   {"id":3,"name":{"string":"cathy"}}
 
-Note that the default polling interval is 5 seconds, so it may take a few seconds to show up.
-Depending on your expected rate up updates or desired latency, a smaller poll interval could be
-used to deliver updates more quickly.
+#.  Use the default configuration file to load data from this database. This file is included with the connector in ``./etc/kafka-connect-jdbc/source-quickstart-sqlite.properties`` and contains the following settings:
 
-Of course, :ref:`all the features of Kafka Connect<connect_userguide>`, including offset
-management and fault
-tolerance, work with the source connector. You can restart and kill the processes and they will
-pick up where they left off, copying only new data (as defined by the ``mode`` setting).
+    .. sourcecode:: bash
+
+       name=test-sqlite-jdbc-autoincrement
+       connector.class=io.confluent.connect.jdbc.JdbcSourceConnector
+       tasks.max=1
+       connection.url=jdbc:sqlite:test.db
+       mode=incrementing
+       incrementing.column.name=id
+       topic.prefix=test-sqlite-jdbc-
+
+    Where:
+
+    - The ``connection.url`` specifies the database to connect to, in this case a local SQLite database file.
+    - The ``mode`` indicates how to query the data and in this case there is an auto-incrementing unique ID so ``incrementing`` mode and ``incrementing.column.name`` are set. In this mode, each query for new data will only return rows with IDs larger than the maximum ID seen in previous queries.
+    - The ``topic.prefix`` setting controls the names of the topics that each table's output is sent to. Because there is only one table, the only output topic in this example will be ``test-sqlite-jdbc-accounts``.
+
+#.  Run the connector in a standalone Kafka Connect worker in another terminal (this assumes Avro settings and that Kafka and the Schema Registry are running locally on the default ports):
+
+    .. sourcecode:: bash
+
+        $ ./bin/connect-standalone ./etc/schema-registry/connect-avro-standalone.properties ./etc/kafka-connect-jdbc/source-quickstart-sqlite.properties
+
+    You should see the process start up and log some messages, and then it will begin executing
+    queries and sending the results to Kafka. To check that it has copied the data that was
+    present when you started Kafka Connect, start a console consumer, reading from the beginning of
+    the topic::
+
+       $ ./bin/kafka-avro-console-consumer --bootstrap-server localhost:9092 --topic test-sqlite-jdbc-accounts --from-beginning
+       {"id":1,"name":{"string":"alice"}}
+       {"id":2,"name":{"string":"bob"}}
+
+    The output shows the two records as expected, one per line, in the JSON encoding of the Avro
+    records. Each row is represented as an Avro record and each column is a field in the record. You
+    can see both columns in the table, ``id`` and ``name``. The IDs were auto-generated and the column
+    is of type ``INTEGER NOT NULL``, which can be encoded directly as an integer. The ``name`` column
+    has type ``STRING`` and can be ``NULL``. The JSON encoding of Avro encodes the strings in the
+    format ``{"type": value}``, so you can see that both rows have ``string`` values with the names
+    specified when you inserted the data.
+
+#.  Add another record via the SQLite command prompt:
+
+    .. sourcecode:: bash
+
+        sqlite> INSERT INTO accounts(name) VALUES('cathy');
+
+    If you switch back to the console consumer, you should see the new record added and, importantly, the old entries are not repeated:
+
+    .. sourcecode:: bash
+
+        {"id":3,"name":{"string":"cathy"}}
+
+    Note that the default polling interval is 5 seconds, so it may take a few seconds to show up. Depending on your expected
+    rate up updates or desired latency, a smaller poll interval could be used to deliver updates more quickly.
+
+:ref:`All the features of Kafka Connect<connect_userguide>`, including offset management and fault tolerance, work with
+the source connector. You can restart and kill the processes and they will pick up where they left off, copying only new
+data (as defined by the ``mode`` setting).
 
 Features
 --------
@@ -158,7 +174,7 @@ indexes on those columns to efficiently perform the queries.
 
 For incremental query modes that use timestamps, the source connector uses a configuration
 ``timestamp.delay.interval.ms`` to control the waiting period after a row with certain timestamp appears
-before we include it in the result. The additional wait allows transactions with earlier timestamps
+before you include it in the result. The additional wait allows transactions with earlier timestamps
 to complete and the related changes to be included in the result.
 
 Configuration
@@ -196,7 +212,7 @@ you to use JDBC connection URLs like
 Examples
 ~~~~~~~~
 
-The full set of configuration options are listed in the next section, but here we provide a few
+The full set of configuration options are listed in the next section, but here are a few
 template configurations that cover some common usage scenarios.
 
 Use a whitelist to limit changes to a subset of tables in a MySQL database, using ``id`` and
@@ -240,12 +256,12 @@ Schema Evolution
 
 The JDBC connector supports schema evolution when the Avro converter is used. When there is a
 change in a database table schema, the JDBC connector can detect the change, create a new Kafka
-Connect schema and try to register a new Avro schema in the Schema Registry. Whether we can
+Connect schema and try to register a new Avro schema in the Schema Registry. Whether you can
 successfully register the schema or not depends on the compatibility level of the Schema Registry,
 which is backward by default.
 
-For example, if we remove a column from a table, the change is backward compatible and the
-corresponding Avro schema can be successfully registered in the Schema Registry. If we modify
+For example, if you remove a column from a table, the change is backward compatible and the
+corresponding Avro schema can be successfully registered in the Schema Registry. If you modify
 the database table schema to change a column type or add a column, when the Avro schema is
 registered to the Schema Registry, it will be rejected as the changes are not backward compatible.
 

@@ -10,6 +10,11 @@ Auto-creation of tables, and limited auto-evolution is also supported.
 Quick Start
 -----------
 
+.. include:: includes/prerequisites.rst
+:start-line: 2
+    :end-line: 6
+    - `SQLite <https://sqlite.org/download.html>`_
+
 To see the basic functionality of the connector, we'll be copying Avro data from a single topic to a local SQLite database.
 This example assumes you are running Kafka and Schema Registry locally on the default ports.
 
