@@ -2,4 +2,4 @@
 
 **Prerequisites:**
 
-- :ref:`Install and start Confluent Platform <installation>`. By default ZooKeeper, Kafka, Schema Registry, Kafka Connect REST API, and Kafka Connect are started.
+- :ref:`Install and start Confluent Platform <installation>` by using the CLI. By default ZooKeeper, Kafka, Schema Registry, Kafka Connect REST API, and Kafka Connect are started.
