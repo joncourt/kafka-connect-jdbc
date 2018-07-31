@@ -16,13 +16,13 @@
 
 package io.confluent.connect.jdbc.source;
 
+import io.confluent.connect.jdbc.util.TableId;
 import org.apache.kafka.common.utils.Time;
 import org.apache.kafka.connect.source.SourceTaskContext;
 import org.apache.kafka.connect.storage.OffsetStorageReader;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
-import org.powermock.api.easymock.PowerMock;
 import org.powermock.api.easymock.annotation.Mock;
 
 import java.util.Collection;
@@ -34,11 +34,11 @@ import static io.confluent.connect.jdbc.source.JdbcSourceConnectorConfig.Numeric
 public class JdbcSourceTaskTestBase {
 
   protected static String SINGLE_TABLE_NAME = "test";
-  protected static Map<String, Object> SINGLE_TABLE_PARTITION = new HashMap<>();
-
-  static {
-    SINGLE_TABLE_PARTITION.put(JdbcSourceConnectorConstants.TABLE_NAME_KEY, SINGLE_TABLE_NAME);
-  }
+  protected static TableId SINGLE_TABLE_ID = new TableId(null, null, SINGLE_TABLE_NAME);
+  protected static Map<String, String> SINGLE_TABLE_PARTITION =
+      OffsetProtocols.sourcePartitionForProtocolV0(SINGLE_TABLE_ID);
+  protected static Map<String, String> SINGLE_TABLE_PARTITION_WITH_VERSION =
+      OffsetProtocols.sourcePartitionForProtocolV1(SINGLE_TABLE_ID);
 
   protected static EmbeddedDerby.TableName SINGLE_TABLE
       = new EmbeddedDerby.TableName(SINGLE_TABLE_NAME);
